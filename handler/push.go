@@ -54,6 +54,8 @@ func Push(
 	var ps httprouter.Params
 	var mtx sync.Mutex // Protects ps.
 
+	level.Debug(logger).Log("handler", "push", "replace", replace, "jobBase64Encoded", jobBase64Encoded)
+
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		job := ps.ByName("job")
 		if jobBase64Encoded {

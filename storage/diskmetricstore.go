@@ -265,14 +265,20 @@ func (dms *DiskMetricStore) processWriteRequest(wr WriteRequest) {
 	dms.lock.Lock()
 	defer dms.lock.Unlock()
 
+	fmt.Println("--- DiskMetricStore.processWriteRequest called.", wr.Replace)
+
 	key := groupingKeyFor(wr.Labels)
+
+	fmt.Println("--- DiskMetricStore.processWriteRequest key.", key, wr.MetricFamilies == nil, wr.MetricFamilies)
 
 	if wr.MetricFamilies == nil {
 		// No MetricFamilies means delete request. Delete the whole
 		// metric group, and we are done here.
+		fmt.Println("--- DiskMetricStore.processWriteRequest delete by : wr.MetricFamilies nil")
 		delete(dms.metricGroups, key)
 		return
 	}
+
 	// Otherwise, it's an update.
 	group, ok := dms.metricGroups[key]
 	if !ok {
@@ -286,6 +292,8 @@ func (dms *DiskMetricStore) processWriteRequest(wr WriteRequest) {
 		// group except pre-existing push timestamps.
 		for name := range group.Metrics {
 			if name != pushMetricName && name != pushFailedMetricName {
+				fmt.Println("--- DiskMetricStore.processWriteRequest delete by : not same name")
+
 				delete(group.Metrics, name)
 			}
 		}

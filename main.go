@@ -121,6 +121,7 @@ func main() {
 
 	// Handlers for pushing and deleting metrics.
 	pushAPIPath := *routePrefix + "/metrics"
+	level.Info(logger).Log("pushAPIPath", pushAPIPath)
 	for _, suffix := range []string{"", handler.Base64Suffix} {
 		jobBase64Encoded := suffix == handler.Base64Suffix
 		r.PUT(pushAPIPath+"/job"+suffix+"/:job/*labels", handler.Push(ms, true, jobBase64Encoded, logger))
