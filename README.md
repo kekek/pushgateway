@@ -5,11 +5,7 @@
 [![Docker Repository on Quay](https://quay.io/repository/prometheus/pushgateway/status)][quay]
 [![Docker Pulls](https://img.shields.io/docker/pulls/prom/pushgateway.svg?maxAge=604800)][hub]
 
-The Prometheus Pushgateway exists to allow ephemeral and batch jobs to
-expose their metrics to Prometheus. Since these kinds of jobs may not
-exist long enough to be scraped, they can instead push their metrics
-to a Pushgateway. The Pushgateway then exposes these metrics to
-Prometheus.
+Prometheus Pushgateway的存在是为了允许临时任务和批处理作业向Prometheus公开其指标。 由于这类工作可能存在的时间不够长，无法被取消，因此可以将其指标推送到Pushgateway。 然后，Pushgateway将这些指标公开给Prometheus。
 
 ## Non-goals
 
@@ -154,6 +150,13 @@ the host and port of the Pushgateway as the `instance` label and a `job` label
 like `pushgateway`. The conflict with the `job` and `instance` labels you might
 have attached to the metrics pushed to the Pushgateway is solved by renaming
 those labels to `exported_job` and `exported_instance`.
+
+[Prometheus服务器将在每个已收集指标上附加一个`job`标签和一个`instance`标签。 
+`job`标签的值来自于抓取配置。 当您将Pushgateway配置为Prometheus服务器的抓取目标时，您可能会选择工作名称，例如`pushgateway`。
+`instance`标签的值会自动设置为要抓取的目标的主机和端口。 
+因此，所有从Pushgateway抓取的指标都将Pushgateway的主机和端口作为`instance`标签和 `pushgateway`之类的`job`标签。
+当推送到pushgateway的指标本身包含有`job`和 `instance` 标签时， pushgateway通过将指标的标签重命名为`exported_job`和`exported_instance`,解决与可能附加到推送网关的指标的标签的冲突]
+
 
 However, this behavior is usually undesired when scraping a
 Pushgateway. Generally, you would like to retain the `job` and `instance`
