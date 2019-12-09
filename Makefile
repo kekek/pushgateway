@@ -18,9 +18,11 @@ include Makefile.common
 
 DOCKER_IMAGE_NAME ?= pushgateway
 
-
 GOHOSTOS=linux
 PROMU_BINARIES=pushgateway
+imageName=kekek/pushgateway
+tagVersion=v3
+images=$(imageName):$(tagVersion)
 
 assets:
 	@echo ">> writing assets"
@@ -31,7 +33,12 @@ build:
 	@echo ">> building binaries"
 	GOOS=linux GO111MODULE=$(GO111MODULE) $(PROMU) build --prefix $(PREFIX) $(PROMU_BINARIES)
 
-
 .PHONY: docker
 docker:
-	docker build -t kekek/pushgateway -f $(DOCKERFILE_PATH) ./
+	@echo ">> build docker images: $(images)"
+	docker build -t $(images) -f $(DOCKERFILE_PATH) ./
+
+.PHONY: push
+push:
+	@echo ">> push docker images ${images}"
+	docker push $(images)

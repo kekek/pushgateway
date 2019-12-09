@@ -75,6 +75,8 @@ func Push(
 			level.Debug(logger).Log("msg", "failed to parse URL", "url", labelsString, "err", err.Error())
 			return
 		}
+
+
 		if job == "" {
 			http.Error(w, "job name is required", http.StatusBadRequest)
 			level.Debug(logger).Log("msg", "job name is required")
@@ -109,6 +111,10 @@ func Push(
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			level.Debug(logger).Log("msg", "failed to parse text", "err", err.Error())
 			return
+		}
+
+		if replace {
+			fmt.Println("handler-push-metricFamilies", metricFamilies)
 		}
 		now := time.Now()
 		errCh := make(chan error, 1)

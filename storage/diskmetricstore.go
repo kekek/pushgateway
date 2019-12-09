@@ -200,7 +200,9 @@ func (dms *DiskMetricStore) GetMetricFamiliesMap() GroupingKeyToMetricGroup {
 	}
 	return groupsCopy
 }
-
+// Add works like push, but only previously pushed metrics with the same name
+// (and the same job and other grouping labels) will be replaced. (It uses HTTP
+// method “POST” to push to the Pushgateway.)
 func (dms *DiskMetricStore) loop(persistenceInterval time.Duration) {
 	lastPersist := time.Now()
 	persistScheduled := false
@@ -292,7 +294,7 @@ func (dms *DiskMetricStore) processWriteRequest(wr WriteRequest) {
 		// group except pre-existing push timestamps.
 		for name := range group.Metrics {
 			if name != pushMetricName && name != pushFailedMetricName {
-				fmt.Println("--- DiskMetricStore.processWriteRequest delete by : not same name")
+				fmt.Println("--- DiskMetricStore.processWriteRequest delete by : not same name", name)
 
 				delete(group.Metrics, name)
 			}
