@@ -269,7 +269,7 @@ func (dms *DiskMetricStore) processWriteRequest(wr WriteRequest) {
 
 	key := groupingKeyFor(wr.Labels)
 
-	fmt.Println("--- DiskMetricStore.processWriteRequest key.", key, wr.MetricFamilies == nil, wr.MetricFamilies)
+	fmt.Println("--- DiskMetricStore.processWriteRequest key.", key, wr.MetricFamilies == nil)
 
 	if wr.MetricFamilies == nil {
 		// No MetricFamilies means delete request. Delete the whole

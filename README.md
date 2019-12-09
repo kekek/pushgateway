@@ -7,29 +7,13 @@
 
 Prometheus Pushgateway的存在是为了允许临时任务和批处理作业向Prometheus公开其指标。 由于这类工作可能存在的时间不够长，无法被取消，因此可以将其指标推送到Pushgateway。 然后，Pushgateway将这些指标公开给Prometheus。
 
-## Non-goals
+## non-goal
 
-The Pushgateway is explicitly not an _aggregator or distributed counter_ but
-rather a metrics cache. It does not have
-[statsd](https://github.com/etsy/statsd)-like semantics. The metrics pushed are
-exactly the same as you would present for scraping in a permanently running
-program. If you need distributed counting, you could either use the actual
-statsd in combination with the [Prometheus statsd
-exporter](https://github.com/prometheus/statsd_exporter), or have a look at
-[Weavework's aggregation
-gateway](https://github.com/weaveworks/prom-aggregation-gateway). With more
-experience gathered, the Prometheus project might one day be able to provide a
-native solution, separate from or possibly even as part of the Pushgateway.
+The Pushgateway 明显不是聚合器或计数器，而是一个指标缓存。它没有[statsd](https://github.com/etsy/statsd)的语义. 推送的指标与在程序中抓到的指标完全相同。 如果您需要分布式计数器, 您可以尝试一下statsd 结合 [Prometheus statsd exporter](https://github.com/prometheus/statsd_exporter), 或者[Weavework's aggregation gateway](https://github.com/weaveworks/prom-aggregation-gateway).通过积累更多的经验，Prometheus项目也许有一天能够提供与Pushgateway分离甚至是其一部分的本地解决方案。
 
-For machine-level metrics, the
-[textfile](https://github.com/prometheus/node_exporter/blob/master/README.md#textfile-collector)
-collector of the Node exporter is usually more appropriate. The Pushgateway is
-intended for service-level metrics.
+对于机器级别的指标, the[textfile](https://github.com/prometheus/node_exporter/blob/master/README.md#textfile-collector)Node exporter的收集器通常更为合适。Pushgateway 更适合服务级别的指标。
 
-The Pushgateway is not an _event store_. While you can use Prometheus as a data
-source for
-[Grafana annotations](http://docs.grafana.org/reference/annotations/), tracking
-something like release events has to happen with some event-logging framework.
+Pushgateway 不是事件存储器. 当然，你可以使用Prometheus作为[Grafana annotations](http://docs.grafana.org/reference/annotations/)的数据源，来跟踪比如 发布事件等一类的东西。
 
 A while ago, we
 [decided to not implement a “timeout” or TTL for pushed metrics](https://github.com/prometheus/pushgateway/issues/19)
@@ -64,42 +48,30 @@ docker pull prom/pushgateway
 docker run -d -p 9091:9091 prom/pushgateway
 ```
 
-## Use it
+## 使用
 
-### Configure the Pushgateway as a target to scrape
+### 将 Pushgateway 配置为收集目标
 
 The Pushgateway has to be configured as a target to scrape by Prometheus, using
 one of the usual methods. _However, you should always set `honor_labels: true`
 in the scrape config_ (see [below](#about-the-job-and-instance-labels) for a
 detailed explanation).
 
-### Libraries
+### 客户端库
 
-Prometheus client libraries should have a feature to push the
-registered metrics to a Pushgateway. Usually, a Prometheus client
-passively presents metric for scraping by a Prometheus server. A
-client library that supports pushing has a push function, which needs
-to be called by the client code. It will then actively push the
-metrics to a Pushgateway, using the API described below.
+Prometheus客户端库应该具有推送注册指标到Pushgateway的能力。
+通常客户端会提供指标度量，被动的等待prometheus服务器来收集。 但是客户端库实现了push函数，支持主动推送指标。
+当调用push函数时， 客户端库会使用下面描述的API主动推送指标到Pushgateway。
 
-### Command line
+### 命令行
 
-Using the Prometheus text protocol, pushing metrics is so easy that no
-separate CLI is provided. Simply use a command-line HTTP tool like
-`curl`. Your favorite scripting language has most likely some built-in
-HTTP capabilities you can leverage here as well.
+使用Prometheus文本协议, 推送指标是如此的方便，以至于没有单独提供cli程序. 比如使用命令行的http工具`curl`. 或其他您喜欢的脚本语言提供的http工具。
 
-*Note that in the text protocol, each line has to end with a line-feed
-character (aka 'LF' or '\n'). Ending a line in other ways, e.g. with 'CR' aka
-'\r', 'CRLF' aka '\r\n', or just the end of the packet, will result in a
-protocol error.*
+*Note ：文本协议中, 必须以换行符 ('LF' or '\n')结尾。使用其他的方式结尾, 例如 'CR'，'\r', 'CRLF'， '\r\n', 将会返回一个协议错误。*
 
-Pushed metrics are managed in groups, identified by a grouping key of any
-number of labels, of which the first must be the `job` label. The groups are
-easy to inspect via the web interface.
+推送的指标按分组管理， 分组的名字由任意数量的标签确定， 这些标签必须的第一个必须是job标签。这些分组通过web接口很容易检查。
 
-*For implications of special characters in label values see the [URL
-section](#url) below.*
+*标签值中特殊字符的含义请参考[URL section](#url)。*
 
 Examples:
 
@@ -138,58 +110,18 @@ Examples:
 
         curl -X PUT http://pushgateway.example.org:9091/api/v1/admin/wipe
 
-### About the job and instance labels
+### 关于 job 和 instance 标签
 
-The Prometheus server will attach a `job` label and an `instance` label to each
-scraped metric. The value of the `job` label comes from the scrape
-configuration. When you configure the Pushgateway as a scrape target for your
-Prometheus server, you will probably pick a job name like `pushgateway`. The
-value of the `instance` label is automatically set to the host and port of the
-target scraped. Hence, all the metrics scraped from the Pushgateway will have
-the host and port of the Pushgateway as the `instance` label and a `job` label
-like `pushgateway`. The conflict with the `job` and `instance` labels you might
-have attached to the metrics pushed to the Pushgateway is solved by renaming
-those labels to `exported_job` and `exported_instance`.
+Prometheus服务器将在每个已收集指标上附加一个`job`标签和一个`instance`标签。 `job`标签的值来自于prometheus抓取目标的配置。 当您将Pushgateway配置为Prometheus服务器的抓取目标时，您可能会选择工作名称，例如`pushgateway`。`instance`标签的值会自动设置为要抓取的目标的主机和端口。 因此，所有从Pushgateway抓取的指标都将Pushgateway的主机和端口作为`instance`标签和 `pushgateway`类似的`job`标签。
+当推送到pushgateway的指标本身包含有`job`和 `instance` 标签时， pushgateway通过将指标的标签重命名为`exported_job`和`exported_instance`,解决与可能附加到推送网关的指标的标签的冲突。
 
-[Prometheus服务器将在每个已收集指标上附加一个`job`标签和一个`instance`标签。 
-`job`标签的值来自于抓取配置。 当您将Pushgateway配置为Prometheus服务器的抓取目标时，您可能会选择工作名称，例如`pushgateway`。
-`instance`标签的值会自动设置为要抓取的目标的主机和端口。 
-因此，所有从Pushgateway抓取的指标都将Pushgateway的主机和端口作为`instance`标签和 `pushgateway`之类的`job`标签。
-当推送到pushgateway的指标本身包含有`job`和 `instance` 标签时， pushgateway通过将指标的标签重命名为`exported_job`和`exported_instance`,解决与可能附加到推送网关的指标的标签的冲突]
+然而，在收集目标的时候，我们常常不希望如此。 通常, 你会希望保留推送指标附带的 `job` and `instance`标签。 这就是在prometheus为pushgateway设置`honor_labels: true` 的原因。它启用了所需要的行为。 详见[documentation](https://prometheus.io/docs/operating/configuration/#scrape_config)
 
-
-However, this behavior is usually undesired when scraping a
-Pushgateway. Generally, you would like to retain the `job` and `instance`
-labels of the metrics pushed to the Pushgateway. That's why you have set
-`honor_labels: true` in the scrape config for the Pushgateway. It enables the
-desired behavior. See the
-[documentation](https://prometheus.io/docs/operating/configuration/#scrape_config)
-for details.
-
-This leaves us with the case where the metrics pushed to the Pushgateway do not
-feature an `instance` label. This case is quite common as the pushed metrics
-are often on a service level and therefore not related to a particular
-instance. Even with `honor_labels: true`, the Prometheus server will attach an
-`instance` label if no `instance` label has been set in the first
-place. Therefore, if a metric is pushed to the Pushgateway without an instance
-label (and without instance label in the grouping key, see below), the
-Pushgateway will export it with an empty instance label (`{instance=""}`),
-which is equivalent to having no `instance` label at all but prevents the
-server from attaching one.
+这有可能导致推送的指标没有`instance` 标签。 这种情况非常普遍，因为推送的指标通常处于服务级别，因此与特定实例无关。 即使 `honor_labels: true`时，如果指标中没有`instance`标签时，Prometheus服务将会附加一个`instance`标签。因此, 推送到pushgateway的指标如果没有`instance`标签 (并且分组关键字中也没有`instance`), Pushgateway将为这个指标导入一个空的`instance` (`{instance=""}`),等同于完全没有`instance`，但是会阻止服务器给他添加一个。
 
 ### About metric inconsistencies
 
-The Pushgateway exposes all pushed metrics together with its own metrics via
-the same `/metrics` endpoint. (See the section about [exposed
-metrics](#exposed-metrics) for details.) Therefore, all the metrics have to be
-consistent with each other: Metrics of the same name must have
-the same type, even if they are pushed to different groups, and there must be
-no duplicates, i.e. metrics with the same name and the exact same label
-pairs. Pushes that would lead to inconsistencies are rejected with status
-code 400.
-
-Inconsistent help strings are tolerated, though. The Pushgateway will pick a
-winning help string and log about it at info level.
+Pushgateway 在 `/metrics` 接口暴露所有推送过来的指标和它自己的指标. (详见 [exposed metrics](#exposed-metrics) ) 因此，所有的指标必须保持一致: 有相同名字的指标必须类型相同, 即使他们被推送到不同的分组, 且不得重复, i.e. 有相同名字和完全相同的标签对。推送这种将会导致不一致，并且被决绝接收，返回 状态码404。pushgateway 将在info级别记录一条不一致的日志信息。
 
 _Legacy note: The help string of Pushgateway's own `push_time_seconds` metric
 has changed in v0.10.0. By using a persistence file, metrics pushed to a

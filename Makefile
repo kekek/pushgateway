@@ -34,4 +34,4 @@ build:
 
 .PHONY: docker
 docker:
-	docker build -t kekek/pushgateway:v1 -f $(DOCKERFILE_PATH) ./
+	docker build -t kekek/pushgateway -f $(DOCKERFILE_PATH) ./
